@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  Nome      String
+  Email     String   @unique
+  Senha     String
+  Role      Role
+  CreatedAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
+
+  funcionario Funcionario?
+}
+
+model Cliente {
+  id             Int       @id @default(autoincrement())
+  nome           String
+  cpf            String?   @db.VarChar(11)
+  email          String?
+  dataNascimento DateTime?
+  cep            String?
+  endereco       String?
+  bairro         String?
+  cidade         String?
+  uf             String?   @db.VarChar(2)
+  numero         String?
+  complemento    String?
+  celular        String?
+
+  createdAt    DateTime      @default(now())
+  veiculos     Veiculo[]
+  agendamentos Agendamento[]
+}
+
+model Veiculo {
+  id             Int      @id @default(autoincrement())
+  placa          String   @unique @db.VarChar(7)
+  chassi         String?  @db.VarChar(17)
+  modelo         String?
+  fabricante     String?
+  ano_modelo     Int?
+  ano_fabricacao Int?
+  cambio         String?
+  motor          String?
+  km             String?
+  cor            String?
+  ar             Boolean?
+
+  createdAt DateTime @default(now())
+
+  clienteId    Int
+  cliente      Cliente       @relation(fields: [clienteId], references: [id])
+  agendamentos Agendamento[]
+  ordensServico OrdemServico[]
+  checklists Checklist[]
+}
+
+model Agendamento {
+  id           Int               @id @default(autoincrement())
+  clienteId    Int
+  veiculoId    Int
+  dataHora     DateTime
+  mecanico     String?
+  tipo_servico String?
+  servico      String
+  status       StatusAgendamento @default(AGENDADO)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  veiculo Veiculo @relation(fields: [veiculoId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  OPERADOR
+  TECNICO
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+model DiagnosticoCatalogo {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique @db.VarChar(20)
+  nome        String   @db.VarChar(80)
+  descricao   String?  @db.VarChar(255)
+  ordensDiagnosticos OrdemDiagnostico[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ServicoCatalogo {
+  id           Int      @id @default(autoincrement())
+  codigo       String   @unique @db.VarChar(20)
+  nome         String   @db.VarChar(80)
+  categoria    String?  @db.VarChar(50)
+  valorPadrao  Decimal? @db.Decimal(10, 2)
+  ordensServicos OrdemServicoItem[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PecaCatalogo {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique @db.VarChar(20)
+  nome        String   @db.VarChar(80)
+  marca       String?  @db.VarChar(50)
+  aplicacao   String?  @db.VarChar(120)
+  grupo       String?  @db.VarChar(50)
+  unidade     String?  @default("UN") @db.VarChar(10)
+
+  ordensPecas OrdemPecaItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+model OrdemPecaItem {
+  id                 Int      @id @default(autoincrement())
+
+  ordemServicoId      Int
+  ordemDiagnosticoId  Int?
+  ordemServicoItemId  Int?
+
+  pecaCatalogoId      Int?
+
+  codigoPeca          String?  @db.VarChar(20)
+  nomePeca            String   @db.VarChar(80)
+
+  fornecedorId        Int?
+  fornecedorNome      String?  @db.VarChar(80)
+
+  quantidade          Int      @default(1)
+  custoUnitario       Decimal? @db.Decimal(10, 2)
+  desconto            Decimal? @db.Decimal(10, 2)
+  valorTotal          Decimal? @db.Decimal(10, 2)
+
+  codigoVisual        String?  @db.VarChar(10)
+  codigoHierarquia    String?  @db.VarChar(20)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  ordemServico        OrdemServico       @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  ordemDiagnostico    OrdemDiagnostico?  @relation(fields: [ordemDiagnosticoId], references: [id], onDelete: Cascade)
+  ordemServicoItem    OrdemServicoItem?  @relation(fields: [ordemServicoItemId], references: [id], onDelete: Cascade)
+  pecaCatalogo        PecaCatalogo?      @relation(fields: [pecaCatalogoId], references: [id])
+}
+
+model Fornecedor {
+  id     Int    @id @default(autoincrement())
+  codigo String @unique @db.VarChar(20)
+
+  nome      String  @db.VarChar(100)
+  cnpj      String  @unique @db.VarChar(18)
+  email     String? @db.VarChar(100)
+  telefone  String? @db.VarChar(20)
+  celular   String? @db.VarChar(20)
+  inscricao String? @db.VarChar(30)
+
+  cep         String? @db.VarChar(9)
+  endereco    String? @db.VarChar(120)
+  numero      String? @db.VarChar(10)
+  uf          String? @db.VarChar(2)
+  bairro      String? @db.VarChar(60)
+  cidade      String? @db.VarChar(60)
+  complemento String? @db.VarChar(80)
+
+  fornecePecas    Boolean @default(true)
+  forneceServicos Boolean @default(false)
+  observacoes      String? @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrdemServico {
+  id             Int         @id @default(autoincrement())
+  codigo         String      @unique @db.VarChar(20)
+  status         StatusOrdem @default(ABERTA)
+
+  veiculoId      Int
+  veiculo        Veiculo     @relation(fields: [veiculoId], references: [id])
+  
+  operadorId     Int?
+  tecnicoId      Int?
+
+  observacoes    String?     @db.VarChar(255)
+  dataEmissao    DateTime    @default(now())
+  dataFechamento DateTime?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  diagnosticos   OrdemDiagnostico[]
+  servicos       OrdemServicoItem[]
+  pecas          OrdemPecaItem[]
+}
+
+model OrdemDiagnostico {
+  id                   Int      @id @default(autoincrement())
+
+  ordemServicoId        Int
+  diagnosticoCatalogoId Int?
+
+  codigoVisual          String? @db.VarChar(10)
+  codigoHierarquia      String? @db.VarChar(20)
+
+  nomeDiagnostico       String  @db.VarChar(80)
+  descricao             String? @db.VarChar(255)
+  observacoes           String? @db.VarChar(255)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  ordemServico          OrdemServico         @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  diagnosticoCatalogo   DiagnosticoCatalogo? @relation(fields: [diagnosticoCatalogoId], references: [id])
+
+  servicos              OrdemServicoItem[]
+  pecas                 OrdemPecaItem[]
+}
+
+model OrdemServicoItem {
+  id                 Int      @id @default(autoincrement())
+
+  ordemServicoId      Int
+  ordemDiagnosticoId  Int?
+  servicoCatalogoId   Int?
+
+  codigoVisual        String? @db.VarChar(10)
+  codigoHierarquia    String? @db.VarChar(20)
+
+  nomeServico         String  @db.VarChar(80)
+  descricao           String? @db.VarChar(255)
+  responsavel         String? @db.VarChar(80)
+  tipo                String? @db.VarChar(50)
+
+  precoVenda          Decimal? @db.Decimal(10, 2)
+  desconto            Decimal? @db.Decimal(10, 2)
+  valorTotal          Decimal? @db.Decimal(10, 2)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  ordemServico        OrdemServico       @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  ordemDiagnostico    OrdemDiagnostico?  @relation(fields: [ordemDiagnosticoId], references: [id], onDelete: Cascade)
+  servicoCatalogo     ServicoCatalogo?   @relation(fields: [servicoCatalogoId], references: [id])
+
+  pecas               OrdemPecaItem[]
+}
+
+enum StatusOrdem {
+  ABERTA
+  EM_ANDAMENTO
+  AGUARDANDO_PECA
+  FINALIZADA
+  CANCELADA
+}
+
+model Checklist {
+  id Int @id @default(autoincrement())
+
+  veiculoId Int
+  veiculo   Veiculo @relation(fields: [veiculoId], references: [id])
+
+  itensEntrada           Json?
+  itensDiagnostico       Json?
+  observacoesEntrada     String? @db.VarChar(1000)
+  observacoesDiagnostico String? @db.VarChar(1000)
+
+  fotoFrente   String?
+  fotoTraseira String?
+  fotoEsquerda String?
+  fotoDireita  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Funcionario {
+  id Int @id @default(autoincrement())
+
+  usuarioId Int     @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  Cpf            String?   @unique
+  Rg             String?
+  DataNascimento DateTime?
+  Celular        String?
+  Ctps           String?
+
+  Cep         String?
+  Endereco    String?
+  Numero      String?
+  Uf          String?
+  Bairro      String?
+  Cidade      String?
+  Complemento String?
+
+  DataAdmissao DateTime?
+
+  CreatedAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
+}
