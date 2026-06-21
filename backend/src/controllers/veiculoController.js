@@ -251,13 +251,19 @@ export async function editarVeiculo(req, res) {
  * @param {Object} res - Objeto da resposta HTTP.
  * @returns {Promise<Object>} Resposta com mensagem de sucesso ou erro.
  */
+
 export async function deletarVeiculo(req, res) {
   try {
     const { id } = req.params;
+    const veiculoId = Number(id);
+
+    if (!veiculoId) {
+      return res.status(400).json({ erro: 'ID do veículo inválido' });
+    }
 
     const veiculo = await prisma.veiculo.findUnique({
       where: {
-        id: Number(id),
+        id: veiculoId,
       },
     });
 
@@ -265,9 +271,39 @@ export async function deletarVeiculo(req, res) {
       return res.status(404).json({ erro: 'Veículo não encontrado' });
     }
 
+    const agendamentos = await prisma.agendamento.count({
+      where: {
+        veiculoId,
+      },
+    });
+
+    const ordensServico = await prisma.ordemServico.count({
+      where: {
+        veiculoId,
+      },
+    });
+
+    const checklists = await prisma.checklist.count({
+      where: {
+        veiculoId,
+      },
+    });
+
+    if (agendamentos > 0 || ordensServico > 0 || checklists > 0) {
+      return res.status(409).json({
+        erro:
+          'Este veículo não pode ser deletado porque possui registros vinculados.',
+        detalhes: {
+          agendamentos,
+          ordensServico,
+          checklists,
+        },
+      });
+    }
+
     await prisma.veiculo.delete({
       where: {
-        id: Number(id),
+        id: veiculoId,
       },
     });
 

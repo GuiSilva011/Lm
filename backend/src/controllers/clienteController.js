@@ -461,6 +461,12 @@ export async function deletarClientes(req, res) {
 
     const clienteId = Number(id);
 
+    if (!clienteId) {
+      return res.status(400).json({
+        erro: 'ID do cliente inválido.',
+      });
+    }
+
     const cliente = await prisma.cliente.findUnique({
       where: {
         id: clienteId,
@@ -471,13 +477,80 @@ export async function deletarClientes(req, res) {
     });
 
     if (!cliente) {
-      return res.status(404).json({ erro: 'Cliente não encontrado' });
+      return res.status(404).json({
+        erro: 'Cliente não encontrado',
+      });
     }
 
+    const veiculoIds = cliente.veiculos.map((veiculo) => veiculo.id);
+
     await prisma.$transaction(async (tx) => {
+      const ordens = await tx.ordemServico.findMany({
+        where: {
+          veiculoId: {
+            in: veiculoIds,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const ordemIds = ordens.map((ordem) => ordem.id);
+
+      await tx.ordemPecaItem.deleteMany({
+        where: {
+          ordemServicoId: {
+            in: ordemIds,
+          },
+        },
+      });
+
+      await tx.ordemServicoItem.deleteMany({
+        where: {
+          ordemServicoId: {
+            in: ordemIds,
+          },
+        },
+      });
+
+      await tx.ordemDiagnostico.deleteMany({
+        where: {
+          ordemServicoId: {
+            in: ordemIds,
+          },
+        },
+      });
+
+      await tx.ordemServico.deleteMany({
+        where: {
+          id: {
+            in: ordemIds,
+          },
+        },
+      });
+
+      await tx.agendamento.deleteMany({
+        where: {
+          veiculoId: {
+            in: veiculoIds,
+          },
+        },
+      });
+
+      await tx.checklist.deleteMany({
+        where: {
+          veiculoId: {
+            in: veiculoIds,
+          },
+        },
+      });
+
       await tx.veiculo.deleteMany({
         where: {
-          clienteId,
+          id: {
+            in: veiculoIds,
+          },
         },
       });
 
@@ -496,6 +569,7 @@ export async function deletarClientes(req, res) {
 
     return res.status(500).json({
       erro: 'Erro ao deletar cliente',
+      detalhe: error.message,
     });
   }
 }

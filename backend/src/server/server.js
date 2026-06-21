@@ -11,6 +11,8 @@ import ordemServicoRoutes from '../routes/ordemServicoRoutes.js';
 import authRoutes from '../routes/authRoutes.js';
 import checklistRoutes from '../routes/checklistRoutes.js';
 import funcionarioRoutes from '../routes/funcionarioRoutes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 
 /**
@@ -62,6 +64,17 @@ app.get('/', (req, res) => {
   res.send('Backend Rodando');
 })
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const frontendPath = path.resolve(__dirname, '../../../frontend/dist');
+
+app.use(express.static(frontendPath));
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 /**
  * Inicializa o servidor HTTP na porta configurada.
  *
@@ -69,9 +82,9 @@ app.get('/', (req, res) => {
  * @param {number|string} PORT - Porta em que o servidor será executado.
  * @returns {Object} Instância do servidor HTTP.
  */
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`)
-})
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`Servidor em http://localhost:${PORT}`);
+});
 
 /**
  * Registra as rotas dos módulos disponíveis na API.
