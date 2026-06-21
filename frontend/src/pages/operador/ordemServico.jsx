@@ -2459,7 +2459,7 @@ Peças necessárias:
 ${linhasPecas}
  
 
-Pode me enviar os valores e disponibilidade, por favor?`;
+Pode me enviar os valores, por favor?`;
   }
 
   /**
@@ -2563,289 +2563,232 @@ Pode me enviar os valores e disponibilidade, por favor?`;
       servico: '',
       diagnostico: '',
     }));
-
     return [...pecasDosServicos, ...pecasAvulsas];
   }
 
-  /**
-   * Monta a mensagem que será enviada para o cliente pelo WhatsApp.
-   * @returns {string} Texto resultante da operação.
-   */
-  function montarMensagemOSCliente() {
-    const diagnosticos = ordem.diagnosticos.filter((diagnostico) =>
-      String(diagnostico.descricao || '').trim()
-    );
+  
 
-    const servicos = obterTodosServicosOS().filter((servico) =>
-      String(servico.descricao || '').trim()
-    );
-
-    const pecas = obterTodasPecasOS().filter((peca) =>
-      String(peca.descricao || '').trim()
-    );
-
-    const linhasDiagnosticos = diagnosticos.length
-      ? diagnosticos
-          .map(
-            (diagnostico, index) =>
-              `${letraDiagnostico(index)} - ${diagnostico.descricao}`
-          )
-          .join('\n')
-      : 'Nenhum diagnóstico informado.';
-
-    const linhasServicos = servicos.length
-      ? servicos
-          .map((servico) => {
-            const valor = formatarMoeda(
-              Math.max(
-                Number(servico.precoVenda || 0) - Number(servico.desconto || 0),
-                0
-              )
-            );
-
-            return `${servico.codigoVisual} - ${servico.descricao} | ${valor}`;
-          })
-          .join('\n')
-      : 'Nenhum serviço informado.';
-
-    const linhasPecas = pecas.length
-      ? pecas
-          .map((peca) => {
-            const quantidade = Number(peca.quantidade || 1);
-            const total = formatarMoeda(
-              Math.max(
-                quantidade * Number(peca.custoUnitario || 0) -
-                  Number(peca.desconto || 0),
-                0
-              )
-            );
-
-            return `${peca.codigoVisual} - ${peca.descricao} | Qtd: ${quantidade} | ${total}`;
-          })
-          .join('\n')
-      : 'Nenhuma peça informada.';
-
-    return `Olá, ${ordem.cliente.nome || 'cliente'}!
-
-Segue o resumo da sua Ordem de Serviço.
-
-OS: ${ordem.codigo || '-'}
-Status: ${ordem.status || '-'}
-
-Cliente: ${ordem.cliente.nome || '-'}
-Veículo: ${[ordem.veiculo.marca, ordem.veiculo.modelo, ordem.veiculo.ano]
-      .filter(Boolean)
-      .join(' ') || '-'}
-Placa: ${ordem.veiculo.placa || '-'}
-Motor: ${ordem.veiculo.motor || '-'}
-Câmbio: ${ordem.veiculo.cambio || '-'}
-KM: ${ordem.veiculo.km || '-'}
-
-Diagnósticos:
-${linhasDiagnosticos}
-
-Serviços:
-${linhasServicos}
-
-Peças:
-${linhasPecas}
-
-Total de serviços: ${formatarMoeda(totais.totalServicos)}
-Total de peças: ${formatarMoeda(totais.totalPecas)}
-Total geral: ${formatarMoeda(totais.totalGeral)}
-
-Observações:
-${ordem.observacoes || '-'}`;
-
-  }
-
-  /**
-   * Abre o WhatsApp do cliente com o resumo da OS preenchido.
-   * @returns {void} Não possui retorno.
-   */
-  function enviarOSParaCliente() {
-    if (!ordem.cliente.nome || !ordem.veiculo.id) {
-      toast.warning('Selecione um cliente/veículo antes de enviar a OS.');
-      return;
-    }
-
-    const telefoneCliente =
-      ordem.cliente.whatsapp || ordem.cliente.celular || ordem.cliente.telefone || '';
-
-    const telefoneWhatsApp = normalizarTelefoneWhatsApp(telefoneCliente);
-
-    if (!telefoneWhatsApp) {
-      toast.warning('O cliente não possui telefone/celular cadastrado.');
-      return;
-    }
-
-    const mensagem = montarMensagemOSCliente();
-    const url = `https://wa.me/${telefoneWhatsApp}?text=${encodeURIComponent(
-      mensagem
-    )}`;
-
-    window.open(url, '_blank', 'noopener,noreferrer');
-    toast.success('OS aberta no WhatsApp do cliente.');
-  }
 
   /**
    * Abre a janela de impressão do navegador para imprimir a OS.
    * @returns {void} Não possui retorno.
    */
-  function imprimirOrdemServico() {
+function imprimirOrdemServico() {
   if (!ordem.cliente.nome || !ordem.veiculo.placa) {
     toast.warning('Selecione um cliente/veículo antes de imprimir a OS.');
     return;
   }
 
+  const dadosOficina = {
+    nome: 'LM Mecânica',
+    subtitulo: 'Mecânica em geral',
+    whatsapp: '(11) 96706-3471',
+    endereco: 'R. Santa Clara, 27 - Canhema, Diadema - SP, 09941-260',
+  };
+
+  const dadosOficinaHtml = [
+    dadosOficina.whatsapp,
+    dadosOficina.endereco,
+  ]
+    .filter((valor) => valor && String(valor).trim() !== '')
+    .map((valor) => `<span>${limparTexto(valor)}</span>`)
+    .join('');
+
+  function limparTexto(valor) {
+    if (valor === undefined || valor === null || valor === '') {
+      return '-';
+    }
+
+    return String(valor)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function calcularTotalServicoImpressao(servico) {
+    const preco = Number(servico.precoVenda || 0);
+    const desconto = Number(servico.desconto || 0);
+
+    return Math.max(preco - desconto, 0);
+  }
+
+  function calcularTotalPecaImpressao(peca) {
+    const quantidade = Number(peca.quantidade || 0);
+    const custoUnitario = Number(peca.custoUnitario || 0);
+    const desconto = Number(peca.desconto || 0);
+
+    return Math.max(quantidade * custoUnitario - desconto, 0);
+  }
+
+  function montarLinhasPecas(pecas = [], codigoBase = 'P') {
+    if (!pecas.length) {
+      return `
+        <tr>
+          <td colspan="7" class="vazio-tabela">
+            Nenhuma peça informada.
+          </td>
+        </tr>
+      `;
+    }
+
+    return pecas
+      .map((peca, index) => {
+        const codigo = `${codigoBase}.${index + 1}`;
+        const total = calcularTotalPecaImpressao(peca);
+
+        return `
+          <tr>
+            <td>${codigo}</td>
+            <td>${limparTexto(peca.descricao)}</td>
+            <td>${limparTexto(peca.fornecedorNome)}</td>
+            <td>${limparTexto(peca.quantidade || 0)}</td>
+            <td>${formatarMoeda(peca.custoUnitario || 0)}</td>
+            <td>${formatarMoeda(peca.desconto || 0)}</td>
+            <td>${formatarMoeda(total)}</td>
+          </tr>
+        `;
+      })
+      .join('');
+  }
+
   const listarDiagnosticos = ordem.diagnosticos
     .map((diagnostico, diagnosticoIndex) => {
-      const letra = letraDiagnostico(diagnosticoIndex);
+      const codigoDiagnostico = letraDiagnostico(diagnosticoIndex);
+      const servicos = diagnostico.servicos || [];
 
-      const servicosHtml = diagnostico.servicos
-        .map((servico, servicoIndex) => {
-          const codigoServico = `${letra}.${servicoIndex + 1}`;
-
-          const pecasHtml = servico.pecas
-            .map((peca, pecaIndex) => {
-              const totalPeca =
-                Number(peca.quantidade || 0) *
-                  Number(peca.custoUnitario || 0) -
-                Number(peca.desconto || 0);
+      const servicosHtml = servicos.length
+        ? servicos
+            .map((servico, servicoIndex) => {
+              const codigoServico = `${codigoDiagnostico}.${servicoIndex + 1}`;
+              const totalServico = calcularTotalServicoImpressao(servico);
+              const pecas = servico.pecas || [];
 
               return `
-                <tr>
-                  <td>${codigoServico}.${pecaIndex + 1}</td>
-                  <td>${peca.descricao || '-'}</td>
-                  <td>${peca.quantidade || 0}</td>
-                  <td>${formatarMoeda(peca.custoUnitario || 0)}</td>
-                  <td>${formatarMoeda(peca.desconto || 0)}</td>
-                  <td>${formatarMoeda(totalPeca)}</td>
-                </tr>
+                <div class="sub-bloco">
+                  <div class="sub-bloco-topo">
+                    <strong>Serviço ${codigoServico}</strong>
+                    <span>${formatarMoeda(totalServico)}</span>
+                  </div>
+
+                  <div class="linha-info">
+                    <div>
+                      <label>Descrição</label>
+                      <span>${limparTexto(servico.descricao)}</span>
+                    </div>
+
+                    <div>
+                      <label>Responsável</label>
+                      <span>${limparTexto(servico.responsavel)}</span>
+                    </div>
+
+                    <div>
+                      <label>Tipo</label>
+                      <span>${limparTexto(servico.tipo)}</span>
+                    </div>
+
+                    <div>
+                      <label>Desconto</label>
+                      <span>${formatarMoeda(servico.desconto || 0)}</span>
+                    </div>
+                  </div>
+
+                  ${
+                    pecas.length > 0
+                      ? `
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Cód.</th>
+                              <th>Peça</th>
+                              <th>Fornecedor</th>
+                              <th>Qtd.</th>
+                              <th>Valor unit.</th>
+                              <th>Desc.</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            ${montarLinhasPecas(pecas, codigoServico)}
+                          </tbody>
+                        </table>
+                      `
+                      : ''
+                  }
+                </div>
               `;
             })
-            .join('');
-
-          return `
-            <div class="item-bloco">
-              <h4>Serviço ${codigoServico}</h4>
-
-              <table>
-                <tbody>
-                  <tr>
-                    <th>Descrição</th>
-                    <td>${servico.descricao || '-'}</td>
-                  </tr>
-                  <tr>
-                    <th>Responsável</th>
-                    <td>${servico.responsavel || '-'}</td>
-                  </tr>
-                  <tr>
-                    <th>Tipo</th>
-                    <td>${servico.tipo || '-'}</td>
-                  </tr>
-                  <tr>
-                    <th>Valor</th>
-                    <td>${formatarMoeda(servico.precoVenda || 0)}</td>
-                  </tr>
-                  <tr>
-                    <th>Desconto</th>
-                    <td>${formatarMoeda(servico.desconto || 0)}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              ${
-                servico.pecas.length > 0
-                  ? `
-                    <h5>Peças vinculadas</h5>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Cód.</th>
-                          <th>Peça</th>
-                          <th>Qtd.</th>
-                          <th>Valor unit.</th>
-                          <th>Desc.</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${pecasHtml}
-                      </tbody>
-                    </table>
-                  `
-                  : ''
-              }
-            </div>
-          `;
-        })
-        .join('');
+            .join('')
+        : '<p class="vazio">Nenhum serviço informado para este diagnóstico.</p>';
 
       return `
-        <section class="secao">
-          <h3>Diagnóstico ${letra}</h3>
+        <div class="bloco-item">
+          <div class="bloco-item-topo">
+            <div>
+              <strong>Diagnóstico ${codigoDiagnostico}</strong>
+              <span>${limparTexto(diagnostico.descricao)}</span>
+            </div>
+          </div>
 
-          <table>
-            <tbody>
-              <tr>
-                <th>Descrição</th>
-                <td>${diagnostico.descricao || '-'}</td>
-              </tr>
-              <tr>
-                <th>Observação</th>
-                <td>${diagnostico.observacao || '-'}</td>
-              </tr>
-            </tbody>
-          </table>
+          ${
+            diagnostico.observacao
+              ? `
+                <div class="observacao-interna">
+                  <label>Observação</label>
+                  <p>${limparTexto(diagnostico.observacao)}</p>
+                </div>
+              `
+              : ''
+          }
 
-          ${servicosHtml || '<p class="vazio">Nenhum serviço vinculado.</p>'}
-        </section>
+          ${servicosHtml}
+        </div>
       `;
     })
     .join('');
 
   const listarServicosSemDiagnostico = ordem.servicosSemDiagnostico
     .map((servico, index) => {
+      const codigoServico = `S.${index + 1}`;
+      const totalServico = calcularTotalServicoImpressao(servico);
+
       return `
         <tr>
-          <td>S.${index + 1}</td>
-          <td>${servico.descricao || '-'}</td>
-          <td>${servico.responsavel || '-'}</td>
-          <td>${servico.tipo || '-'}</td>
-          <td>${formatarMoeda(servico.precoVenda || 0)}</td>
+          <td>${codigoServico}</td>
+          <td>${limparTexto(servico.descricao)}</td>
+          <td>${limparTexto(servico.responsavel)}</td>
+          <td>${limparTexto(servico.tipo)}</td>
+          <td>${formatarMoeda(totalServico)}</td>
           <td>${formatarMoeda(servico.desconto || 0)}</td>
         </tr>
       `;
     })
     .join('');
 
-  const listarPecasAvulsas = ordem.pecasAvulsas
-    .map((peca, index) => {
-      const totalPeca =
-        Number(peca.quantidade || 0) * Number(peca.custoUnitario || 0) -
-        Number(peca.desconto || 0);
+  const listarPecasAvulsas = montarLinhasPecas(ordem.pecasAvulsas, 'P');
 
-      return `
-        <tr>
-          <td>P.${index + 1}</td>
-          <td>${peca.descricao || '-'}</td>
-          <td>${peca.fornecedorNome || '-'}</td>
-          <td>${peca.quantidade || 0}</td>
-          <td>${formatarMoeda(peca.custoUnitario || 0)}</td>
-          <td>${formatarMoeda(peca.desconto || 0)}</td>
-          <td>${formatarMoeda(totalPeca)}</td>
-        </tr>
-      `;
-    })
-    .join('');
+  const nomeVeiculo = [
+    ordem.veiculo.marca,
+    ordem.veiculo.modelo,
+    ordem.veiculo.ano,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const telefoneCliente =
+    ordem.cliente.celular ||
+    ordem.cliente.whatsapp ||
+    ordem.cliente.telefone ||
+    '-';
 
   const conteudoImpressao = `
     <!DOCTYPE html>
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
-        <title>Ordem de Serviço ${ordem.codigo || ''}</title>
+        <title>Ordem de Serviço - ${limparTexto(ordem.codigo)}</title>
 
         <style>
           * {
@@ -2854,182 +2797,333 @@ ${ordem.observacoes || '-'}`;
 
           body {
             margin: 0;
-            padding: 24px;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #1d1d1b;
+            padding: 0;
             background: #ffffff;
-            font-size: 12px;
+            color: #111111;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10.5px;
           }
 
           .documento {
             width: 100%;
-            max-width: 900px;
+            max-width: 190mm;
             margin: 0 auto;
+            padding: 0;
           }
 
           .cabecalho {
+            padding-bottom: 10px;
+            border-bottom: 3px solid #c1121f;
+            margin-bottom: 10px;
+          }
+
+          .topo-principal {
             display: flex;
-            justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 3px solid #0e352d;
-            padding-bottom: 16px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 10px;
           }
 
-          .empresa h1 {
-            margin: 0;
-            color: #0e352d;
-            font-size: 26px;
-            letter-spacing: 0.5px;
-          }
-
-          .empresa p {
-            margin: 4px 0 0;
-            color: #555;
-            font-size: 12px;
-          }
-
-          .os-info {
-            text-align: right;
-          }
-
-          .os-info strong {
-            display: block;
-            font-size: 18px;
-            color: #0e352d;
-          }
-
-          .os-info span {
-            display: block;
-            margin-top: 4px;
-          }
-
-          .box {
-            border: 1px solid #d6d6d6;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 14px;
-            page-break-inside: avoid;
-          }
-
-          .box-title {
-            margin: 0 0 10px;
-            font-size: 15px;
-            color: #0e352d;
-            border-bottom: 1px solid #eeeeee;
-            padding-bottom: 6px;
-          }
-
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px 14px;
-          }
-
-          .campo {
-            min-height: 34px;
-          }
-
-          .campo label {
-            display: block;
-            font-size: 10px;
-            text-transform: uppercase;
-            color: #666;
+          .marca {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
             margin-bottom: 3px;
           }
 
-          .campo span {
-            display: block;
-            font-weight: 600;
-            color: #1d1d1b;
+          .marca .lm {
+            color: #c1121f;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
           }
 
+          .marca .mecanica {
+            color: #111111;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+          }
+
+          .oficina-subtitulo {
+            margin: 0 0 7px;
+            color: #374151;
+            font-size: 10px;
+            font-weight: 700;
+          }
+
+          .oficina-dados-min {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px 12px;
+            color: #4b5563;
+            font-size: 9px;
+            line-height: 1.35;
+          }
+
+          .info-compacta {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 9px;
+          }
+
+          .info-grupo {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 7px 14px;
+          }
+
+          .info-grupo-titulo {
+            grid-column: 1 / -1;
+            margin-bottom: 1px;
+            color: #c1121f;
+            font-size: 9.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+
+          .info-campo label,
+          .campo label,
+          .linha-info label,
+          .observacao-interna label {
+            display: block;
+            margin-bottom: 2px;
+            color: #6b7280;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+          }
+
+          .info-campo span,
+          .campo span,
+          .linha-info span {
+            display: block;
+            color: #111111;
+            font-size: 9.8px;
+            font-weight: 800;
+            word-break: break-word;
+          }
+
+          .info-campo.span-2,
           .span-2 {
             grid-column: span 2;
           }
 
+          .info-campo.span-3 {
+            grid-column: span 3;
+          }
+
+          .info-campo.span-4,
           .span-4 {
             grid-column: span 4;
+          }
+
+          .box {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+          }
+
+          .box-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: -10px -10px 9px;
+            padding: 8px 10px;
+            background: #f3f4f6;
+            border-bottom: 1px solid #d1d5db;
+            border-radius: 8px 8px 0 0;
+            color: #111111;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+          }
+
+          .box-title::after {
+            content: '';
+            width: 42px;
+            height: 2px;
+            background: #c1121f;
+            border-radius: 999px;
+          }
+
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px 12px;
+          }
+
+          .campo {
+            min-height: 30px;
           }
 
           table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 8px;
-            margin-bottom: 12px;
+            page-break-inside: avoid;
           }
 
           th,
           td {
-            border: 1px solid #dcdcdc;
-            padding: 7px;
+            border: 1px solid #d1d5db;
+            padding: 6px;
             text-align: left;
             vertical-align: top;
           }
 
           th {
-            background: #f3f5f4;
-            color: #0e352d;
-            font-size: 11px;
+            background: #111111;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
           }
 
           td {
-            font-size: 11px;
+            color: #111111;
+            font-size: 10px;
           }
 
-          .secao {
-            margin-bottom: 16px;
-            page-break-inside: avoid;
-          }
-
-          .secao h3 {
-            margin: 0 0 8px;
-            background: #0e352d;
-            color: #ffffff;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 14px;
-          }
-
-          .item-bloco {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #e2e2e2;
-            border-radius: 6px;
-            page-break-inside: avoid;
-          }
-
-          .item-bloco h4 {
-            margin: 0 0 8px;
-            color: #1d1d1b;
-            font-size: 13px;
-          }
-
-          .item-bloco h5 {
-            margin: 10px 0 4px;
-            color: #0e352d;
-            font-size: 12px;
-          }
-
-          .vazio {
-            color: #777;
+          .vazio,
+          .vazio-tabela {
+            color: #6b7280;
             font-style: italic;
           }
 
+          .vazio-tabela {
+            text-align: center;
+            padding: 12px;
+          }
+
+          .bloco-item {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 9px;
+            margin-bottom: 9px;
+            page-break-inside: avoid;
+          }
+
+          .bloco-item-topo {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding-bottom: 7px;
+            margin-bottom: 7px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+
+          .bloco-item-topo strong {
+            display: block;
+            color: #c1121f;
+            font-size: 11px;
+            text-transform: uppercase;
+          }
+
+          .bloco-item-topo span {
+            display: block;
+            margin-top: 2px;
+            color: #111111;
+            font-weight: 800;
+          }
+
+          .sub-bloco {
+            border-left: 3px solid #c1121f;
+            background: #fafafa;
+            padding: 8px 9px;
+            margin-top: 7px;
+            page-break-inside: avoid;
+          }
+
+          .sub-bloco-topo {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 7px;
+          }
+
+          .sub-bloco-topo strong {
+            color: #111111;
+            font-size: 11px;
+          }
+
+          .sub-bloco-topo span {
+            color: #c1121f;
+            font-weight: 900;
+          }
+
+          .linha-info {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 6px;
+          }
+
+          .observacao-interna {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            padding: 7px;
+            margin-bottom: 8px;
+          }
+
+          .observacao-interna p,
+          .observacoes-texto {
+            margin: 0;
+            color: #374151;
+            line-height: 1.45;
+          }
+
+          .totais-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 14px;
+            align-items: start;
+            margin-top: 12px;
+            page-break-inside: avoid;
+          }
+
+          .termos {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 9px;
+            color: #4b5563;
+            line-height: 1.45;
+          }
+
+          .termos strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #111111;
+            font-size: 10px;
+            text-transform: uppercase;
+          }
+
           .totais {
-            margin-left: auto;
-            width: 320px;
-            border: 1px solid #d6d6d6;
+            border: 1px solid #d1d5db;
             border-radius: 8px;
             overflow: hidden;
-            page-break-inside: avoid;
           }
 
           .total-linha {
             display: flex;
             justify-content: space-between;
-            padding: 9px 12px;
-            border-bottom: 1px solid #e5e5e5;
+            gap: 16px;
+            padding: 9px 10px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+
+          .total-linha span {
+            color: #4b5563;
+            font-weight: 800;
+          }
+
+          .total-linha strong {
+            color: #111111;
+            font-size: 11px;
           }
 
           .total-linha:last-child {
@@ -3037,48 +3131,68 @@ ${ordem.observacoes || '-'}`;
           }
 
           .total-geral {
-            background: #0e352d;
+            background: #c1121f;
             color: #ffffff;
-            font-size: 15px;
-            font-weight: bold;
+          }
+
+          .total-geral span,
+          .total-geral strong {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 900;
           }
 
           .assinaturas {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 48px;
-            margin-top: 56px;
+            gap: 52px;
+            margin-top: 46px;
             page-break-inside: avoid;
           }
 
           .assinatura {
-            border-top: 1px solid #1d1d1b;
+            border-top: 1px solid #111111;
             text-align: center;
-            padding-top: 8px;
-            font-size: 11px;
+            padding-top: 7px;
+            color: #111111;
+            font-size: 10px;
+            font-weight: 700;
           }
 
           .rodape {
-            margin-top: 28px;
-            padding-top: 12px;
-            border-top: 1px solid #d6d6d6;
-            text-align: center;
-            color: #666;
-            font-size: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 8px;
+            border-top: 1px solid #d1d5db;
+            color: #6b7280;
+            font-size: 9px;
           }
 
           @page {
             size: A4;
-            margin: 12mm;
+            margin: 10mm;
           }
 
           @media print {
             body {
               padding: 0;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
 
             .documento {
               max-width: 100%;
+            }
+
+            .box,
+            .bloco-item,
+            .sub-bloco,
+            .totais-wrapper,
+            .assinaturas {
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
           }
         </style>
@@ -3087,125 +3201,99 @@ ${ordem.observacoes || '-'}`;
       <body>
         <div class="documento">
           <header class="cabecalho">
-            <div class="empresa">
-              <h1>MotorMind</h1>
-              <p>Sistema de Gestão para Oficinas Mecânicas</p>
+            <div class="topo-principal">
+              <div>
+                <div class="marca">
+                  <span class="lm">LM</span>
+                  <span class="mecanica">Mecânica</span>
+                </div>
+
+                <p class="oficina-subtitulo">
+                  ${limparTexto(dadosOficina.subtitulo)}
+                </p>
+
+                <div class="oficina-dados-min">
+                  ${dadosOficinaHtml}
+                </div>
+              </div>
             </div>
 
-            <div class="os-info">
-              <strong>Ordem de Serviço</strong>
-              <span>Nº ${ordem.codigo || '-'}</span>
-              <span>Status: ${ordem.status || '-'}</span>
-              <span>Data: ${new Date().toLocaleDateString('pt-BR')}</span>
+            <div class="info-compacta">
+              <div class="info-grupo">
+                <div class="info-grupo-titulo">Informações do cliente</div>
+
+                <div class="info-campo span-2">
+                  <label>Cliente</label>
+                  <span>${limparTexto(ordem.cliente.nome)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Telefone</label>
+                  <span>${limparTexto(telefoneCliente)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>OS</label>
+                  <span>${limparTexto(ordem.codigo)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Status</label>
+                  <span>${limparTexto(ordem.status)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Emissão</label>
+                  <span>${new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Placa</label>
+                  <span>${limparTexto(ordem.veiculo.placa)}</span>
+                </div>
+
+                <div class="info-campo span-2">
+                  <label>Veículo</label>
+                  <span>${limparTexto(nomeVeiculo)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Motor</label>
+                  <span>${limparTexto(ordem.veiculo.motor)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Câmbio</label>
+                  <span>${limparTexto(ordem.veiculo.cambio)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Cor</label>
+                  <span>${limparTexto(ordem.veiculo.cor)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>KM</label>
+                  <span>${limparTexto(ordem.veiculo.km)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Ar-condicionado</label>
+                  <span>${ordem.veiculo.possuiAr ? 'Sim' : 'Não'}</span>
+                </div>
+
+                <div class="info-campo span-2">
+                  <label>Chassi</label>
+                  <span>${limparTexto(ordem.veiculo.chassi)}</span>
+                </div>
+
+                <div class="info-campo">
+                  <label>Total</label>
+                  <span>${formatarMoeda(totais.totalGeral)}</span>
+                </div>
+              </div>
             </div>
           </header>
-
-          <section class="box">
-            <h2 class="box-title">Dados do cliente</h2>
-
-            <div class="grid">
-              <div class="campo span-2">
-                <label>Cliente</label>
-                <span>${ordem.cliente.nome || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>CPF</label>
-                <span>${ordem.cliente.cpf || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Data de nascimento</label>
-                <span>${formatarData(ordem.cliente.dataNascimento)}</span>
-              </div>
-
-              <div class="campo">
-                <label>Celular</label>
-                <span>${ordem.cliente.celular || ordem.cliente.whatsapp || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Telefone</label>
-                <span>${ordem.cliente.telefone || '-'}</span>
-              </div>
-
-              <div class="campo span-2">
-                <label>E-mail</label>
-                <span>${ordem.cliente.email || '-'}</span>
-              </div>
-
-              <div class="campo span-2">
-                <label>Endereço</label>
-                <span>${montarEnderecoCliente() || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>CEP</label>
-                <span>${ordem.cliente.cep || '-'}</span>
-              </div>
-
-              <div class="campo span-2">
-                <label>Complemento</label>
-                <span>${ordem.cliente.complemento || '-'}</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="box">
-            <h2 class="box-title">Dados do veículo</h2>
-
-            <div class="grid">
-              <div class="campo">
-                <label>Placa</label>
-                <span>${ordem.veiculo.placa || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Marca</label>
-                <span>${ordem.veiculo.marca || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Modelo</label>
-                <span>${ordem.veiculo.modelo || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Ano</label>
-                <span>${ordem.veiculo.ano || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Motor</label>
-                <span>${ordem.veiculo.motor || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Câmbio</label>
-                <span>${ordem.veiculo.cambio || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Cor</label>
-                <span>${ordem.veiculo.cor || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>KM</label>
-                <span>${ordem.veiculo.km || '-'}</span>
-              </div>
-
-              <div class="campo span-2">
-                <label>Chassi</label>
-                <span>${ordem.veiculo.chassi || '-'}</span>
-              </div>
-
-              <div class="campo">
-                <label>Ar-condicionado</label>
-                <span>${ordem.veiculo.possuiAr ? 'Sim' : 'Não'}</span>
-              </div>
-            </div>
-          </section>
 
           <section class="box">
             <h2 class="box-title">Diagnósticos e serviços</h2>
@@ -3233,6 +3321,7 @@ ${ordem.observacoes || '-'}`;
                         <th>Desconto</th>
                       </tr>
                     </thead>
+
                     <tbody>
                       ${listarServicosSemDiagnostico}
                     </tbody>
@@ -3260,6 +3349,7 @@ ${ordem.observacoes || '-'}`;
                         <th>Total</th>
                       </tr>
                     </thead>
+
                     <tbody>
                       ${listarPecasAvulsas}
                     </tbody>
@@ -3271,23 +3361,38 @@ ${ordem.observacoes || '-'}`;
 
           <section class="box">
             <h2 class="box-title">Observações</h2>
-            <p>${ordem.observacoes || 'Nenhuma observação informada.'}</p>
+            <p class="observacoes-texto">
+              ${limparTexto(
+                ordem.observacoes || 'Nenhuma observação informada.'
+              )}
+            </p>
           </section>
 
-          <section class="totais">
-            <div class="total-linha">
-              <span>Total de serviços</span>
-              <strong>${formatarMoeda(totais.totalServicos)}</strong>
+          <section class="totais-wrapper">
+            <div class="termos">
+              <strong>Condições gerais</strong>
+              <span>
+                Este documento apresenta os serviços e peças informados na ordem
+                de serviço. Valores, disponibilidade de peças e prazos podem ser
+                ajustados conforme avaliação técnica e aprovação do cliente.
+              </span>
             </div>
 
-            <div class="total-linha">
-              <span>Total de peças</span>
-              <strong>${formatarMoeda(totais.totalPecas)}</strong>
-            </div>
+            <div class="totais">
+              <div class="total-linha">
+                <span>Total de serviços</span>
+                <strong>${formatarMoeda(totais.totalServicos)}</strong>
+              </div>
 
-            <div class="total-linha total-geral">
-              <span>Total geral</span>
-              <strong>${formatarMoeda(totais.totalGeral)}</strong>
+              <div class="total-linha">
+                <span>Total de peças</span>
+                <strong>${formatarMoeda(totais.totalPecas)}</strong>
+              </div>
+
+              <div class="total-linha total-geral">
+                <span>Total geral</span>
+                <strong>${formatarMoeda(totais.totalGeral)}</strong>
+              </div>
             </div>
           </section>
 
@@ -3302,13 +3407,22 @@ ${ordem.observacoes || '-'}`;
           </section>
 
           <footer class="rodape">
-            Documento gerado pelo MotorMind.
+            <span>
+              ${limparTexto(dadosOficina.nome)} - ${limparTexto(
+                dadosOficina.telefone
+              )}
+            </span>
+
+            <span>
+              Documento gerado em ${new Date().toLocaleDateString('pt-BR')}
+            </span>
           </footer>
         </div>
 
         <script>
           window.onload = function () {
             window.print();
+
             window.onafterprint = function () {
               window.close();
             };
@@ -4294,15 +4408,6 @@ ${ordem.observacoes || '-'}`;
         <section className="os-final-actions">
           <button
             type="button"
-            className="os-action os-action-green"
-            onClick={enviarOSParaCliente}
-            disabled={!ordem.veiculo.id}
-          >
-            Enviar OS para o cliente
-          </button>
-
-          <button
-            type="button"
             className="os-action os-action-blue"
             onClick={imprimirOrdemServico}
             disabled={!ordem.veiculo.id}
@@ -4633,3 +4738,4 @@ ${ordem.observacoes || '-'}`;
 }
 
 export default OrdemServico;
+  

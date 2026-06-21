@@ -53,12 +53,12 @@ function Sidebar() {
   /** Indica se o perfil atual pode acessar a área do operador. */
   // Helpers simples para decidir quais menus aparecem para cada perfil.
   function podeVerOperador() {
-    return isOperador;
+    return isOperador || isAdmin;
   }
 
   /** Indica se o perfil atual pode acessar a área do técnico. */
   function podeVerTecnico() {
-    return isTecnico;
+    return isTecnico || isAdmin;
   }
 
   /** Alterna o estado de expansão da sidebar e limpa os submenus quando ela fecha. */
@@ -114,7 +114,7 @@ function Sidebar() {
         <div className="sidebar-header">
           {sidebarAberta && (
             <div className="logo">
-              Motor<span className="text-orange">Mind</span>
+              LM
             </div>
           )}
 
@@ -343,7 +343,7 @@ function Sidebar() {
                 }
               >
                 <img
-                  src="/icons/cliente.svg"
+                  src="/icons/fornecedor.png"
                   alt="Cadastrar fornecedores"
                   className="menu-icon"
                 />
@@ -359,7 +359,7 @@ function Sidebar() {
                 }
               >
                 <img
-                  src="/icons/consultar-clientes.svg"
+                  src="/icons/verFornecedor.png"
                   alt="Visualizar fornecedores"
                   className="menu-icon"
                 />
@@ -375,7 +375,7 @@ function Sidebar() {
                 }
               >
                 <img
-                  src="/icons/usuario.svg"
+                  src="/icons/funcionarios.png"
                   alt="Cadastrar funcionários"
                   className="menu-icon"
                 />
@@ -391,7 +391,7 @@ function Sidebar() {
                 }
               >
                 <img
-                  src="/icons/consultar-clientes.svg"
+                  src="/icons/verFuncionarios.png"
                   alt="Visualizar funcionários"
                   className="menu-icon"
                 />

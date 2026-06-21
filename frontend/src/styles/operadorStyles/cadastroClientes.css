@@ -1,3 +1,21 @@
+:root {
+  --black: #111111;
+  --black-soft: #1c1c1c;
+
+  --red: #c1121f;
+  --red-hover: #9f0f1a;
+  --red-light: #fee2e2;
+
+  --white: #ffffff;
+  --background: #f4f4f5;
+  --border: #e5e7eb;
+
+  --text: #1f2937;
+  --muted: #6b7280;
+
+  --success: #16a34a;
+}
+
 /* CONTEÚDO */
 .cadastro-content {
   width: 100%;
@@ -13,7 +31,7 @@
 .cadastro-header h1 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--black);
 }
 
 .cadastro-header p {
@@ -26,9 +44,9 @@
   margin: 12px 0 20px;
   padding: 12px 16px;
   border-radius: 8px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #9a3412;
+  background: var(--red-light);
+  border: 1px solid #fecaca;
+  color: var(--red-hover);
   font-size: 13px;
   font-weight: 600;
 }
@@ -37,9 +55,9 @@
   margin-bottom: 16px;
   padding: 12px 16px;
   border-radius: 8px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  color: var(--black);
   font-size: 13px;
   font-weight: 600;
 }
@@ -54,9 +72,9 @@
 .form-section {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .form-section h2 {
@@ -65,7 +83,7 @@
   gap: 8px;
   margin-bottom: 16px;
   font-size: 16px;
-  color: var(--text);
+  color: var(--black);
 }
 
 .section-icon {
@@ -115,7 +133,7 @@
 .field-group label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--black);
 }
 
 .cadastro-form input,
@@ -123,7 +141,7 @@
 .cadastro-form textarea {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 10px 14px;
   font-size: 14px;
   outline: none;
@@ -134,14 +152,14 @@
 
 .cadastro-form input::placeholder,
 .cadastro-form textarea::placeholder {
-  color: #cbd5e1;
+  color: #9ca3af;
 }
 
 .cadastro-form input:focus,
 .cadastro-form select:focus,
 .cadastro-form textarea:focus {
-  border-color: #94a3b8;
-  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(193, 18, 31, 0.14);
 }
 
 /* INPUT COM ÍCONE */
@@ -178,18 +196,18 @@
 }
 
 .add-veiculo-btn {
-  background: var(--blue);
+  background: var(--black);
   color: var(--white);
   border: none;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .add-veiculo-btn:hover {
-  background: var(--blue-hover);
+  background: var(--red);
   transform: translateY(-1px);
 }
 
@@ -208,7 +226,7 @@
     170px;
 
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   margin-top: 10px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -221,10 +239,10 @@
   gap: 12px;
   min-width: 1450px;
   padding: 12px 16px;
-  background: #f8fafc;
+  background: var(--black);
   font-size: 12px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--white);
 }
 
 .veiculo-row {
@@ -236,7 +254,12 @@
   padding: 12px 16px;
   border-top: 1px solid var(--border);
   font-size: 13px;
-  color: #334155;
+  color: var(--text);
+  background: var(--white);
+}
+
+.veiculo-row:hover {
+  background: #f9fafb;
 }
 
 .veiculo-row span,
@@ -255,7 +278,7 @@
 
 .veiculos-empty p {
   margin-bottom: 6px;
-  color: var(--text);
+  color: var(--black);
 }
 
 .empty-icon-image {
@@ -283,17 +306,17 @@
 }
 
 .btn-editar-veiculo {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #e5e7eb;
+  color: var(--black);
 }
 
 .btn-editar-veiculo:hover {
-  background: #cbd5e1;
+  background: #d1d5db;
 }
 
 .btn-remover-veiculo {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--red-light);
+  color: var(--red-hover);
 }
 
 .btn-remover-veiculo:hover {
@@ -310,7 +333,7 @@
 .btn-secondary,
 .btn-primary {
   padding: 10px 24px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
@@ -319,68 +342,69 @@
 .btn-secondary {
   border: 1px solid var(--border);
   background: var(--white);
-  color: var(--text);
+  color: var(--black);
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
+  background: #f3f4f6;
+  border-color: #d1d5db;
   transform: translateY(-1px);
 }
 
 .btn-primary {
-  background: var(--orange);
+  background: var(--red);
   color: var(--white);
   border: none;
 }
 
 .btn-primary:hover {
-  background: var(--orange-hover);
+  background: var(--red-hover);
   transform: translateY(-1px);
 }
 
 .btn-edit-cliente {
-  border: 1px solid #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border: 1px solid var(--black);
+  background: var(--black);
+  color: var(--white);
   padding: 10px 24px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-edit-cliente:hover {
-  background: #dbeafe;
+  background: var(--black-soft);
   transform: translateY(-1px);
 }
 
 .btn-delete-cliente {
   border: none;
-  background: #dc2626;
+  background: var(--red);
   color: var(--white);
   padding: 10px 24px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .btn-delete-cliente:hover {
-  background: #b91c1c;
+  background: var(--red-hover);
   transform: translateY(-1px);
 }
 
 .form-message {
   font-size: 14px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--success);
 }
 
 /* MODAL VEÍCULO */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(17, 17, 17, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -391,10 +415,10 @@
 .modal-veiculo {
   width: 100%;
   max-width: 820px;
-  background: #ffffff;
+  background: var(--white);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
   animation: fadeInModal 0.2s ease;
 }
 
@@ -402,7 +426,7 @@
   margin: 0 0 20px;
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--black);
 }
 
 .modal-grid {
@@ -420,34 +444,35 @@
   margin-bottom: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--black);
 }
 
 .modal-grid .field-group input {
   width: 100%;
   height: 44px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0 14px;
   font-size: 15px;
   outline: none;
-  background: #fff;
+  background: var(--white);
+  color: var(--text);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .modal-grid .field-group select {
   width: 100%;
   height: 44px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0 38px 0 14px;
   font-size: 15px;
   outline: none;
-  background: #fff;
-  color: #0f172a;
+  background: var(--white);
+  color: var(--text);
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%),
-    linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--black) 50%),
+    linear-gradient(135deg, var(--black) 50%, transparent 50%);
   background-position: calc(100% - 18px) 19px, calc(100% - 12px) 19px;
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
@@ -456,12 +481,12 @@
 
 .modal-grid .field-group input:focus,
 .modal-grid .field-group select:focus {
-  border-color: #ff7a00;
-  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(193, 18, 31, 0.14);
 }
 
 .modal-grid .field-group input::placeholder {
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
 .modal-field-full {
